@@ -1,0 +1,28 @@
+---
+title: fixem.be
+description: Fix broken social-media link previews, and resolve any social URL to clean metadata JSON.
+---
+
+fixem.be does two things:
+
+1. **Fixes link previews.** Prepend `https://fixem.be/` to a social-media URL and
+   paste it into Discord, Telegram, or Slack. The link unfurls with a proper
+   image or video card instead of a broken or empty one.
+2. **Serves metadata as an API.** The same resolver is available as a versioned
+   JSON API at `/api/v1`, so you can turn any supported social URL into clean,
+   structured metadata from your own code.
+
+Both work the same way underneath: fixem.be fetches the post, extracts its
+title, author, image, and video, and hands them back — as OpenGraph tags for a
+crawler, a `302` for a browser, or JSON for an API client.
+
+## Where to go next
+
+- [Quick start](/getting-started/quick-start/) — fix your first embed, then make
+  your first API call.
+- [Introduction](/getting-started/introduction/) — how the crawler-vs-browser
+  split works.
+- [API overview](/api/overview/) — base URL, versioning, and the response
+  contract.
+- [API reference](/api-reference/) — every endpoint, generated from the OpenAPI
+  spec.
