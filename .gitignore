@@ -6,6 +6,10 @@ dist/
 # synced from the fixem.be repo at build time — never hand-edit, never commit
 src/openapi.yaml
 
+# internal design specs / working notes — not part of the published site
+# (the site's own content lives under src/content/docs/)
+docs/
+
 # dependencies
 node_modules/
 

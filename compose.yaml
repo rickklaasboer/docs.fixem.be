@@ -1,0 +1,23 @@
+# Local build — renders the site and serves it exactly like production.
+#
+#   docker compose up --build
+#
+# The OpenAPI contract is fetched from the live API at build time; point it
+# elsewhere with:  OPENAPI_URL=https://staging.fixem.be/openapi.yaml docker compose build
+services:
+  docs:
+    build:
+      context: .
+      args:
+        OPENAPI_URL: ${OPENAPI_URL:-https://fixem.be/openapi.yaml}
+    restart: unless-stopped
+    # Loopback only: a reverse proxy in front terminates TLS (see ../fixem.be).
+    ports:
+      - "127.0.0.1:8081:80"
+    healthcheck:
+      # nginx:alpine ships BusyBox wget — no curl needed.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
