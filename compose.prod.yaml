@@ -1,0 +1,29 @@
+# Deployment compose — runs the prebuilt image from GHCR (no local build).
+#
+#   docker compose -f compose.prod.yaml pull      # fetch the newest image
+#   docker compose -f compose.prod.yaml up -d      # (re)start
+#
+# Pin a specific release instead of latest by setting DOCS_TAG, e.g.
+#   DOCS_TAG=1.0.0 docker compose -f compose.prod.yaml up -d
+#
+# The site is fully static — no runtime config or .env is needed. TLS is
+# terminated by a reverse proxy in front (same host as ../fixem.be); the
+# container listens on loopback only. Uptime is monitored by the shared gatus in
+# ../fixem.be — add docs.fixem.be as an endpoint there rather than running a
+# second monitor here.
+services:
+  docs:
+    image: ghcr.io/rickklaasboer/docs.fixem.be:${DOCS_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+    # Backend app is on 3000 and its gatus on 8080 — docs takes 8081 to avoid a
+    # collision when both stacks share the host.
+    ports:
+      - "127.0.0.1:8081:80"
+    healthcheck:
+      # nginx:alpine ships BusyBox wget — no curl needed.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

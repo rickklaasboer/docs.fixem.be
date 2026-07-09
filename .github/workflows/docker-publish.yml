@@ -1,0 +1,64 @@
+name: Build & publish docs image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  # Rebuild when the API contract changes. The fixem.be backend dispatches this
+  # event after its OpenAPI contract is updated so the baked-in reference stays
+  # in sync. Add this step to the backend's release workflow:
+  #
+  #   - uses: peter-evans/repository-dispatch@v3
+  #     with:
+  #       token: ${{ secrets.DOCS_DISPATCH_TOKEN }}   # PAT with repo scope on docs.fixem.be
+  #       repository: rickklaasboer/docs.fixem.be
+  #       event-type: contract-updated
+  repository_dispatch:
+    types: [contract-updated]
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }} # rickklaasboer/docs.fixem.be (already lowercase)
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OPENAPI_URL=https://fixem.be/openapi.yaml
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
